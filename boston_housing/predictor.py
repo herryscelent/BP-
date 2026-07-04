@@ -18,8 +18,8 @@ def batch_predict(model, X_test, scaler=None):
     y_pred_norm = model.predict(X_test)
 
     if scaler is not None:
-        n_features = scaler.n_features_in_
-        dummy = np.zeros((len(y_pred_norm), n_features))
+        n_scaler = scaler.n_features_in_
+        dummy = np.zeros((len(y_pred_norm), n_scaler))
         dummy[:, -1] = y_pred_norm
         y_pred = scaler.inverse_transform(dummy)[:, -1]
     else:
@@ -45,11 +45,15 @@ def predict_single(model, features_array, scaler=None):
 
     # 归一化（使用训练集的 scaler）
     if scaler is not None:
-        # 需要构建包含目标列的完整数组以匹配 scaler 的维度
-        n_features = scaler.n_features_in_
-        dummy = np.zeros((1, n_features))
-        dummy[:, :-1] = features
-        features_norm = scaler.transform(dummy)[:, :-1]
+        n_scaler = scaler.n_features_in_
+        n_input = features.shape[1]
+        if n_scaler == n_input:
+            features_norm = scaler.transform(features)
+        else:
+            # scaler 拟合了 [X, y] 组合, 构建含目标列的数组
+            dummy = np.zeros((1, n_scaler))
+            dummy[:, :n_input] = features
+            features_norm = scaler.transform(dummy)[:, :n_input]
     else:
         features_norm = features
 
@@ -58,7 +62,7 @@ def predict_single(model, features_array, scaler=None):
 
     # 反归一化
     if scaler is not None:
-        dummy_pred = np.zeros((1, n_features))
+        dummy_pred = np.zeros((1, n_scaler))
         dummy_pred[:, -1] = pred_norm
         pred = scaler.inverse_transform(dummy_pred)[0, -1]
     else:
@@ -124,6 +128,22 @@ def print_prediction_samples(y_true, y_pred, n_samples=10):
     print("-" * 60)
 
 
+
+
+def predict_bulk(features_list, model=None, scaler=None):
+    """
+    批量预测：同时预测多个样本的房价
+    features_list: [[f1,...,f13], [f1,...,f13], ...]
+    返回: 预测房价列表（千美元）
+    """
+    if model is None:
+        from utils import load_model
+        model, scaler = load_model()
+    results = []
+    for feats in features_list:
+        pred = predict_single(model, feats, scaler)
+        results.append(pred)
+    return results
 if __name__ == "__main__":
     # 测试预测模块
     from data_loader import prepare_datasets

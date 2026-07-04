@@ -43,21 +43,20 @@ def load_local_csv():
 
 
 def display_data_info(X, y, feature_names=None):
-    """显示数据集基本信息"""
-    print("\n" + "=" * 60)
+    names = feature_names if feature_names is not None else list(X.columns)
+    print()
+    print("=" * 60)
     print("数据集基本信息")
     print("=" * 60)
     print(f"样本总数: {X.shape[0]}")
     print(f"特征数量: {X.shape[1]}")
-    print(f"特征名称: {list(X.columns)}")
-    data_with_target = pd.concat([X.head(), y.rename(TARGET_COL)], axis=1)
+    print(f"特征名称: {names}")
+    preview = X.head().copy()
+    preview[TARGET_COL] = y.head().values
     print(f"\n前 5 条数据预览:")
-    print(data_with_target.to_string())
+    print(preview.to_string())
     print(f"\n基本统计信息:")
-    full_data = pd.concat([X, y.rename(TARGET_COL)], axis=1)
-    print(full_data.describe().to_string())
-
-
+    print(X.describe().to_string())
 def clean_data(X, y):
     """
     数据清洗：检查缺失值、处理异常值
